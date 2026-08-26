@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>หนังสือภายนอก - คณะครุศาสตร์ มหาวิทยาลัยราชภัฏเลย (จัดฐานครุฑตรงบรรทัดแรก)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        @font-face {
+            font-family: 'TH Sarabun New';
+            src: url('https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@7/fonts/THSarabunNew/THSarabunNew.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'TH Sarabun New';
+            src: url('https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@7/fonts/THSarabunNew/THSarabunNew-Bold.woff2') format('woff2');
+            font-weight: bold;
+            font-style: normal;
+        }
+
+        body {
+            font-family: 'TH SarabunPSK', 'TH Sarabun New', sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sarabun {
+            font-family: 'TH SarabunPSK', 'TH Sarabun New', sans-serif;
+        }
+
+        .hidden-element {
+            display: none !important;
+        }
+
+        #preview-container {
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+        }
+
+        /* ขนาด A4 21.0 x 29.7 ซม. พร้อมระยะขอบงานสารบรรณ (บน 2.5cm / ซ้าย 3cm / ขวา 2cm / ล่าง 2cm) */
+        .print-area {
+            width: 210mm;
+            height: 297mm;
+            max-height: 297mm;
+            padding-top: 2.5cm;
+            padding-bottom: 2cm;
+            padding-left: 3cm;
+            padding-right: 2cm;
+            background-color: white;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); 
+            box-sizing: border-box;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* การจัดข้อความชิดขอบซ้าย-ขวาเสมอกัน */
+        .thai-justify {
+            text-align: justify;
+            text-justify: inter-cluster;
+            word-break: break-word;
+        }
+
+        @media print {
+            @page {
+                size: 210mm 297mm;
+                margin: 0;
+            }
+            body, html {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 210mm !important;
+                height: 297mm !important;
+                background-color: white !important;
+                overflow: hidden !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            #preview-container {
+                padding: 0 !important;
+                display: block !important;
+            }
+            .print-area {
+                width: 210mm !important;
+                height: 297mm !important; 
+                max-height: 297mm !important;
+                padding-top: 2.5cm !important;
+                padding-bottom: 2cm !important;
+                padding-left: 3cm !important;
+                padding-right: 2cm !important;
+                margin: 0 !important;
+                box-shadow: none !important; 
+                border: none !important;
+                box-sizing: border-box !important;
+                page-break-inside: avoid !important;
+                page-break-after: avoid !important;
+                overflow: hidden !important;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen text-[16pt]">
+
+    <!-- Navbar -->
+    <nav class="bg-emerald-800 text-white p-4 shadow-md no-print sticky top-0 z-10 font-sans">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+            <div class="flex items-center space-x-2 text-xl font-bold">
+                <i data-lucide="file-text" class="w-6 h-6 flex-shrink-0"></i>
+                <span class="text-lg sm:text-xl truncate">หนังสือภายนอก (ขออนุญาตเข้านิเทศนักศึกษาฝึกประสบการณ์วิชาชีพครู)</span>
+            </div>
+            <div class="flex flex-wrap gap-2 justify-end">
+                <button 
+                    id="btn-toggle-preview"
+                    onclick="togglePreview()"
+                    class="px-3.5 py-1.5 rounded-lg font-medium transition flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm"
+                >
+                    <i data-lucide="eye" class="w-4 h-4 icon-default"></i>
+                    <i data-lucide="edit-3" class="w-4 h-4 icon-active hidden-element"></i>
+                    <span id="text-toggle-preview">ดูตัวอย่างเอกสาร</span>
+                </button>
+                <button 
+                    id="btn-print"
+                    onclick="window.print()"
+                    class="bg-blue-600 hover:bg-blue-500 px-3.5 py-1.5 rounded-lg font-medium transition flex items-center space-x-1.5 hidden-element text-sm"
+                >
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>พิมพ์เอกสาร</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ฟอร์มกรอกข้อมูล -->
+    <main id="form-container" class="max-w-5xl mx-auto p-4 sm:p-6 no-print font-sans">
+        <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8">
+            <div class="mb-6 text-center border-b pb-4">
+                <h2 class="text-2xl font-bold text-gray-800">กรอกข้อมูลหนังสือภายนอก</h2>
+                <div class="mt-4 flex justify-center items-center space-x-2">
+                    <input type="checkbox" id="in_useThaiDigits" onchange="syncData()" checked class="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500">
+                    <label for="in_useThaiDigits" class="text-sm font-medium text-gray-700">แปลงตัวเลขเป็นตัวเลขไทยอัตโนมัติ (๑ ๒ ๓)</label>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- ข้อมูลหนังสือ -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-emerald-700 flex items-center border-b pb-2">
+                        <i data-lucide="hash" class="w-5 h-5 mr-2"></i> ข้อมูลออกหนังสือ
+                    </h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">เลขที่หนังสือออก</label>
+                        <input type="text" id="in_docNo" oninput="syncData()" value="อว ๐๖๒.๐๑/ว ๐๙๓๖" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">วันที่ออกหนังสือ</label>
+                        <input type="date" id="in_docDate" oninput="syncData()" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                    </div>
+
+                    <h3 class="text-lg font-bold text-emerald-700 flex items-center border-b pb-2 pt-4">
+                        <i data-lucide="building" class="w-5 h-5 mr-2"></i> เรียน / โรงเรียนปลายทาง
+                    </h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">เรียน (ปลายทาง)</label>
+                        <input type="text" id="in_recipient" oninput="syncData()" value="ผู้อำนวยการโรงเรียน.........................." class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ภาคเรียนที่</label>
+                            <input type="text" id="in_term" oninput="syncData()" value="1" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ปีการศึกษา</label>
+                            <input type="text" id="in_year" oninput="syncData()" value="2569" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- กำหนดการและรายชื่อผู้นิเทศ -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-emerald-700 flex items-center border-b pb-2">
+                        <i data-lucide="calendar" class="w-5 h-5 mr-2"></i> กำหนดการเข้านิเทศ
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">วันที่เข้านิเทศ</label>
+                            <input type="date" id="in_visitDate" oninput="syncData()" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">เวลา (เช่น 09.00)</label>
+                            <input type="text" id="in_visitTime" oninput="syncData()" value="09.00" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        </div>
+                    </div>
+
+                    <h3 class="text-lg font-bold text-emerald-700 flex items-center border-b pb-2 pt-4">
+                        <i data-lucide="users" class="w-5 h-5 mr-2"></i> รายชื่อผู้นิเทศ
+                    </h3>
+                    <div class="space-y-2">
+                        <input type="text" id="in_supervisor1" oninput="syncData()" placeholder="1. ชื่อ-สกุล ผู้นิเทศ" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-emerald-500 outline-none text-sm" />
+                        <input type="text" id="in_supervisor2" oninput="syncData()" placeholder="2. ชื่อ-สกุล ผู้นิเทศ (ถ้ามี)" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-emerald-500 outline-none text-sm" />
+                        <input type="text" id="in_supervisor3" oninput="syncData()" placeholder="3. ชื่อ-สกุล ผู้นิเทศ (ถ้ามี)" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-emerald-500 outline-none text-sm" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 text-center pt-6 border-t">
+                <button onclick="togglePreview(true)" class="bg-emerald-600 text-white hover:bg-emerald-700 px-8 py-3 rounded-xl font-bold text-lg shadow-md transition-transform transform hover:scale-105 inline-flex items-center space-x-2">
+                    <i data-lucide="file-check" class="w-6 h-6"></i>
+                    <span>สร้างเอกสาร A4 / ดูตัวอย่าง</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- เอกสาร A4 (จัดฐานครุฑตรงกับตัวหนังสือบรรทัดแรก) -->
+    <div id="preview-container" class="hidden-element">
+        <div class="sarabun print-area leading-[1.25]" id="a4-document-container">
+            
+            <!-- ส่วนหัวหนังสือภายนอก: ตราครุฑ 3 ซม. ตรงกลาง โดยฐานของตราครุฑตรงกับข้อความบรรทัดแรก -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px; table-layout: fixed;">
+                <!-- แถวที่ 1: ตราครุฑ 3 ซม. ตรงกลาง + บรรทัดแรกของข้อความซ้าย/ขวา จัดชิดฐาน (vertical-align: bottom) -->
+                <tr>
+                    <!-- ซ้าย: "ที่ ..." วางตรงฐานครุฑ -->
+                    <td style="width: 35%; vertical-align: bottom; text-align: left; padding-bottom: 1px;">
+                        <span class="text-[16pt]">ที่ </span><span id="out_docNo" class="text-[16pt]">อว ๐๖๒.๐๑/ว ๐๙๓๖</span>
+                    </td>
+                    <!-- กลาง: ตราครุฑ สูง 3 ซม. -->
+                    <td style="width: 30%; text-align: center; vertical-align: bottom;">
+                        <img id="garuda-logo" src="https://lh3.googleusercontent.com/d/1p8T15vbyZaM8Ra8vriAcoRotn9Ir4OFf" 
+                             alt="ตราครุฑ" 
+                             style="height: 3cm; width: auto; display: block; margin: 0 auto;"
+                             crossorigin="anonymous">
+                    </td>
+                    <!-- ขวา: บรรทัดแรกของส่วนราชการ "คณะครุศาสตร์ มหาวิทยาลัยราชภัฏเลย" วางตรงฐานครุฑ -->
+<td style="width: 35%; vertical-align: bottom; text-align: left; padding-bottom: 1px; white-space: nowrap;">
+    <div style="font-size: 16pt; line-height: 1; white-space: nowrap;">
+        คณะครุศาสตร์ มหาวิทยาลัยราชภัฏเลย
+    </div>
+</td>
+</tr>
+                <!-- แถวที่ 2: ที่อยู่ส่วนราชการบรรทัดต่อมาทางฝั่งขวา -->
+                <tr>
+                    <td style="width: 35%;"></td>
+                    <td style="width: 30%;"></td>
+                    <td style="width: 35%; vertical-align: top; text-align: left; line-height: 1.25;">
+                        <div class="text-[16pt]">ถนนเลย-เชียงคาน ต.เมือง อ.เมืองเลย</div>
+                        <div class="text-[16pt]">จ.เลย ๔๒๐๐๐</div>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- วันที่ (วางตำแหน่งเริ่มต้นตรงกึ่งกลางลำตัวครุฑ ระยะ ~8cm) -->
+            <div class="text-left mb-4 text-[16pt]" style="margin-left: 8cm;">
+                <span id="out_docDate">....ใส่วันที่ และเดือน............  ๒๕๖๙</span>
+            </div>
+
+            <!-- เรื่อง / เรียน -->
+            <div class="flex items-baseline mb-1 text-[16pt]">
+                <span class="w-[1.8cm] flex-shrink-0 font-normal">เรื่อง</span> 
+                <span id="out_subject" class="flex-1 thai-justify">ขออนุญาตเข้านิเทศนักศึกษาฝึกประสบการณ์วิชาชีพครู</span>
+            </div>
+            <div class="flex items-baseline mb-4 text-[16pt]">
+                <span class="w-[1.8cm] flex-shrink-0 font-normal">เรียน</span>
+                <span id="out_recipient" class="flex-1 thai-justify">ผู้อำนวยการโรงเรียน..........................</span>
+            </div>
+
+            <!-- ย่อหน้าที่ 1 (จัดชิดขอบซ้าย-ขวาเสมอกัน) -->
+<!-- ย่อหน้าที่ 1 (จัดชิดขอบซ้าย เสมอกัน) -->
+<!-- ย่อหน้าที่ 1 -->
+<!-- ย่อหน้าที่ 1 -->
+<div class="text-[16pt] mb-2 indent-[2.5cm] leading-[1.3]"
+     style="
+        font-family: 'TH Sarabun New', 'Sarabun', sans-serif;
+        text-align: left;
+        word-spacing: normal;
+        letter-spacing: 0;
+    ">
+    ด้วยคณะครุศาสตร์ มหาวิทยาลัยราชภัฏเลย ได้กำหนดให้นักศึกษาครุศาสตรบัณฑิตชั้นปีที่ ๔
+    ออกฝึกประสบการณ์วิชาชีพครูขั้นปฏิบัติการสอนในสถานศึกษา
+    เพื่อให้นักศึกษาได้เรียนรู้และฝึกปฏิบัติการสอนในสถานศึกษา
+    ประจำภาคเรียนที่ <span id="out_term">............</span>
+    ปีการศึกษา <span id="out_year">๒๕๖๙</span>
+</div>
+
+            <!-- ย่อหน้าที่ 2 -->
+            <div class="text-[16pt] thai-justify mb-1 indent-[2.5cm] leading-[1.3]">
+                ในการนี้ คณะครุศาสตร์ มหาวิทยาลัยราชภัฏเลย จึงขออนุญาตให้บุคลากรในสังกัดคณะครุศาสตร์ จำนวน <span id="out_count" class="font-bold">..............</span> ท่าน ได้แก่
+            </div>
+
+            <!-- รายชื่อผู้นิเทศ -->
+            <div class="pl-[3.5cm] mb-2 text-[16pt] space-y-0.5" id="out_supervisor_list">
+                <div id="row_sup1" class="flex items-baseline"><span class="w-8">๑.</span><span id="out_sup1">...........................................................................................</span></div>
+                <div id="row_sup2" class="flex items-baseline"><span class="w-8">๒.</span><span id="out_sup2">...........................................................................................</span></div>
+                <div id="row_sup3" class="flex items-baseline"><span class="w-8">๓.</span><span id="out_sup3">...........................................................................................</span></div>
+            </div>
+
+            <!-- ข้อความปิดท้ายย่อหน้าที่ 2 -->
+            <div class="text-[16pt] thai-justify mb-4 leading-[1.3]">
+                เข้าสถานศึกษาเพื่อนิเทศ ติดตามผลการปฏิบัติงาน และประสานความร่วมมือในการจัดการเรียนรู้ของนักศึกษาในวันที่ <span id="out_visitDate">.......................................</span> เวลา <span id="out_visitTime">............</span> น. เป็นต้นไป
+            </div>
+
+            <!-- ย่อหน้าที่ 3 -->
+            <div class="text-[16pt] thai-justify mb-8 indent-[2.5cm]">
+                จึงเรียนมาเพื่อโปรดพิจารณาอนุญาต และขอขอบคุณมา ณ โอกาสนี้
+            </div>
+
+            <!-- คำลงท้าย และ ลายเซ็น -->
+            <div class="flex flex-col items-center ml-auto w-[10cm] text-[16pt]">
+                <div class="mb-12 text-center w-full">ขอแสดงความนับถือ</div>
+                <div class="text-center leading-[1.2] w-full">
+                    <div class="mb-1">(รองศาสตราจารย์ ดร.วีนัส ภักดิ์นรา)</div>
+                    <div>คณบดีคณะครุศาสตร์ ปฏิบัติราชการแทน</div>
+                    <div>อธิการบดีมหาวิทยาลัยราชภัฏเลย</div>
+                </div>
+            </div>
+
+            <!-- ส่วนท้ายกระดาษ (Footer) -->
+            <div class="absolute bottom-[2cm] left-[3cm] text-[16pt] leading-[1.15] text-gray-800">
+                <div>ศูนย์ฝึกประสบการณ์วิชาชีพครู คณะครุศาสตร์</div>
+                <div>โทร ๐-๔๒๘๓-๕๒๒๙</div>
+                <div>โทรสาร ๐-๔๒๘๓-๕๐๔๐</div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Script ควบคุมการทำงาน -->
+    <script>
+        let isPreviewMode = false;
+
+        window.onload = function() {
+            lucide.createIcons();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('in_docDate').value = today;
+            document.getElementById('in_visitDate').value = today;
+            syncData(); 
+        };
+
+        function toThaiDigits(str) {
+            if (!str) return '';
+            const thaiNum = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
+            return str.toString().replace(/[0-9]/g, function(w) {
+                return thaiNum[parseInt(w)];
+            });
+        }
+
+        function formatDateThai(dateString, useThaiNum = true) {
+            if (!dateString) return '....ใส่วันที่ และเดือน............  ๒๕๖๙';
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return '....ใส่วันที่ และเดือน............  ๒๕๖๙';
+            
+            const months = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+            const day = date.getDate();
+            const month = months[date.getMonth()];
+            const year = date.getFullYear() + 543;
+
+            let result = `${day} ${month} ${year}`;
+            return useThaiNum ? toThaiDigits(result) : result;
+        }
+
+        function syncData() {
+            const useThai = document.getElementById('in_useThaiDigits').checked;
+
+            const docNo = document.getElementById('in_docNo').value;
+            const docDate = document.getElementById('in_docDate').value;
+            const recipient = document.getElementById('in_recipient').value;
+            const term = document.getElementById('in_term').value;
+            const year = document.getElementById('in_year').value;
+            const visitDate = document.getElementById('in_visitDate').value;
+            const visitTime = document.getElementById('in_visitTime').value;
+
+            document.getElementById('out_docNo').innerText = useThai ? toThaiDigits(docNo) : docNo;
+            document.getElementById('out_docDate').innerText = formatDateThai(docDate, useThai);
+            document.getElementById('out_recipient').innerText = recipient;
+            document.getElementById('out_term').innerText = useThai ? toThaiDigits(term) : term;
+            document.getElementById('out_year').innerText = useThai ? toThaiDigits(year) : year;
+            document.getElementById('out_visitDate').innerText = formatDateThai(visitDate, useThai);
+            document.getElementById('out_visitTime').innerText = useThai ? toThaiDigits(visitTime) : visitTime;
+
+            // การจัดการรายชื่อผู้นิเทศ
+            let count = 0;
+            for (let i = 1; i <= 3; i++) {
+                const val = document.getElementById(`in_supervisor${i}`).value.trim();
+                const rowEl = document.getElementById(`row_sup${i}`);
+                const outEl = document.getElementById(`out_sup${i}`);
+
+                if (val !== '') {
+                    count++;
+                    outEl.innerText = val;
+                    rowEl.classList.remove('hidden-element');
+                } else {
+                    rowEl.classList.add('hidden-element');
+                }
+            }
+
+            if (count === 0) {
+                document.getElementById('row_sup1').classList.remove('hidden-element');
+                document.getElementById('out_sup1').innerText = '...........................................................................................';
+                document.getElementById('out_count').innerText = useThai ? toThaiDigits('1') : '1';
+            } else {
+                document.getElementById('out_count').innerText = useThai ? toThaiDigits(count.toString()) : count.toString();
+            }
+        }
+
+        function togglePreview(forcePreview = null) {
+            if (forcePreview !== null) {
+                isPreviewMode = forcePreview;
+            } else {
+                isPreviewMode = !isPreviewMode;
+            }
+
+            const formContainer = document.getElementById('form-container');
+            const previewContainer = document.getElementById('preview-container');
+            const textTogglePreview = document.getElementById('text-toggle-preview');
+            const btnPrint = document.getElementById('btn-print');
+
+            if (isPreviewMode) {
+                formContainer.classList.add('hidden-element');
+                previewContainer.classList.remove('hidden-element');
+                textTogglePreview.innerText = 'กลับไปแก้ไขฟอร์ม';
+                btnPrint.classList.remove('hidden-element');
+            } else {
+                formContainer.classList.remove('hidden-element');
+                previewContainer.classList.add('hidden-element');
+                textTogglePreview.innerText = 'ดูตัวอย่างเอกสาร';
+                btnPrint.classList.add('hidden-element');
+            }
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('a4-document-container');
+            const filename = `หนังสือภายนอก_ขออนุญาตเข้านิเทศ.pdf`;
+
+            const opt = {
+                margin:       0,
+                filename:     filename,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2.5, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+      <script language=JavaScript>
+<!--
+var message="Do not click right..!! (อย่าคลิ๊กขวา..!!)";
+///////////////////////////////////
+function clickIE() {if (document.all) {alert(message);return false;}}
+function clickNS(e) {if 
+(document.layers||(document.getElementById&&!document.all)) {
+if (e.which==2||e.which==3) {alert(message);return false;}}}
+if (document.layers) 
+{document.captureEvents(Event.MOUSEDOWN);document.onmousedown=clickNS;}
+else{document.onmouseup=clickNS;document.oncontextmenu=clickIE;}
+document.oncontextmenu=new Function("return false")
+// --> 
+</script>
+</body>
+</html>
